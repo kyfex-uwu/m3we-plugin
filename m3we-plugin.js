@@ -23,18 +23,33 @@
             });
             MenuBar.addAction(button, 'filter');
             
-            new Dialog({
-                id: 'generate_tree',
-                title: 'Tree Generator',
-                form: {
-                    branches: {label: 'Branches', type: 'number', value: 10, step: 1, min: 1, max: 16},
-                    conifer: {label: 'Conifer', type: 'checkbox'},
+            new Panel("properties",{
+                name:"Properties",
+                icon:"build_circle",
+                //menu:
+            });
+            
+            new Mode("properties",{
+                category: "navigate",
+                default_tool: "move_tool",
+                center_windows: ["preview"],
+                selectCubes: true,
+                component: {
+                  data() {
+                    return {
+                      count: 0
+                    }
+                  },
+                  template: `
+                    <button @click="count++">
+                      You clicked me {{ count }} times.
+                    </button>`
                 },
-                onConfirm: function(formData) {
-                    TreeGenerator.generateTree(formData.branches, formData.conifer)
-                    this.hide()
-                }
-            }).show()
+                condition: () => true,//need to change this so it only appears when working on designated m3we files
+                onSelect: ()=>{},
+                onUnselect: ()=>{}
+            });
+            Modes.vue.$forceUpdate()
         },
         onunload() {
             button.delete();
