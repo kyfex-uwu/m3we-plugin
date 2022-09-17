@@ -22,6 +22,19 @@
                 }
             });
             MenuBar.addAction(button, 'filter');
+            
+            new Dialog({
+                id: 'generate_tree',
+                title: 'Tree Generator',
+                form: {
+                    branches: {label: 'Branches', type: 'number', value: 10, step: 1, min: 1, max: 16},
+                    conifer: {label: 'Conifer', type: 'checkbox'},
+                },
+                onConfirm: function(formData) {
+                    TreeGenerator.generateTree(formData.branches, formData.conifer)
+                    this.hide()
+                }
+            }).show()
         },
         onunload() {
             button.delete();
