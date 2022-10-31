@@ -2,7 +2,7 @@
     var button;
     var propsPanel;
     
-    Plugin.register("m3we_plugin", {
+    Plugin.register("m3we-plugin", {
         title: "M3WE Plugin",
         author: "KYFEX",
         description: "Tool for making M3WE asset creation even easier",
@@ -76,15 +76,15 @@
                             let blockStateId=this.blockStates;
                             let newBlockState = document.createElement("li");
                             newBlockState.id="blockState"+blockStateId;
-                            newBlockState.style["margin-left"]="12px;";
+                            newBlockState.style="margin-left:12px;";
                             newBlockState.innerHTML=`
                                 Blockstate <input class="m3we-box dark_bordered"
                                 value="blockstate"
                                 style="margin-right:5px;">
                             <ul style="margin-left:12px;">
                                 <li>Type:<select name="defaultvalue" class="m3we-box dark_bordered">
-                                    <option value="integer">Integer</option>
-                                    <option value="boolean">Boolean</option>
+                                    <option value="int">Integer</option>
+                                    <option value="bool">Boolean</option>
                                     <option value="direction">Direction</option>
                                     <!--<option value="enum">Enum</option>-->
                                 </select></li>
@@ -150,20 +150,19 @@
                         if(currBlockState==0)
                             objToReturn.blockStates={};
 
-                        //objToReturn.blockstates[currBSElement.children]
+                        let BSData=currBSElement.children[1].children;
+                        let currBlockStateObj={
+                            type:BSData[0].children[0].value,
+                            default:BSData[1].children[0].value
+                        };
+                        if(currBlockStateObj.type=="int"){
+                            currBlockStateObj.min=BSData[2].children[0].value;
+                            currBlockStateObj.max=BSData[3].children[0].value;
+                        }
 
+                        objToReturn.blockStates[currBSElement.children[0].value]=currBlockStateObj;
                         currBlockState++;
                     }
-
-                    /*"blockStates": {
-                        "interval":{
-                            "type": "int",
-                            "min": 1,
-                            "max": 16,
-                            "default": 4
-                        }
-                    },*/
-
 
                     objToReturn.createdBy="m3we_plugin";
 
