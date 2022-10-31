@@ -10,7 +10,12 @@
         version: "0.0.0",
         variant: "both",
         onload() {
-            
+            document.head.innerHTML+="<style>"+
+            ".m3we-box{"+
+            "background-color: var(--color-dark);"+
+            "border: 1px solid var(--color-button);"+
+            "</style>";
+
             propsPanel=new Panel("properties",{
                 icon:"build_circle",
                 condition: {modes: ["properties"]},
@@ -50,13 +55,11 @@
                             ["emissiveLightingWhen","checkbox","boolOrScript", false],//or script
                             ["postProcessWhen","checkbox","boolOrScript", false],//or script*/
                         ],
+                        blockStates:0,
 
                         namespaceValidator:/[a-z0-9_.-]+/,
                         blockNameValidator:/[a-z0-9/._-]+/,
                     }},
-                    watch: {
-                        //data variable name, whenever the variable changes this func will run (newvalue, oldvalue)
-                    },
                     methods: {
                         propToReadable(text){
                             let toReturn=text[0].toUpperCase();
@@ -69,57 +72,60 @@
                             }
                             return toReturn;
                         },
-                        updateProp(parent,index){
-                            let value=parent.children[index].children[0].children[0].value;
-                            let propType;
-                            switch(propType=parent.children[index].getAttribute("proptype")){
-                                case "namespace":
-                                    this.properties[index][3]=this.namespaceValidator.match(value)[0];
-                                    break;
-                                case "blockName":
-                                    this.properties[index][3]=this.blockNameValidator.match(value)[0];
-                                    break;
-                                case "material":
-                                case "sound":
-                                case "mapColor":
-                                case "dropTable":
-                                    this.properties[index][3]=value;
-                                    break;
-                                case "integer":
-                                    this.properties[index][3]=parseInt(value);
-                                    break;
-                                case "boolOrScript":
-                                case "bool":
-                                    value=parent.children[index].children[0].children[0].checked;
-                                    this.properties[index][3]=value;
-                                    if(propType=="boolOrScript")
-                                        parent.children[index].children[0].children[1].innerText=
-                                            (value?"ALWAYS":"NEVER");
-                                    break;
-                                    
-                            }
+                        addBlockState(parent){
+                            let blockStateId=this.blockStates;
+                            let newBlockState = document.createElement("li");
+                            newBlockState.id="blockState"+blockStateId;
+                            newBlockState.style["margin-left"]="12px;";
+                            newBlockState.innerHTML=`
+                                Blockstate <input class="m3we-box dark_bordered"
+                                value="blockstate"
+                                style="margin-right:5px;">
+                            <ul style="margin-left:12px;">
+                                <li>Type:<select name="defaultvalue" class="m3we-box dark_bordered">
+                                    <option value="integer">Integer</option>
+                                    <option value="boolean">Boolean</option>
+                                    <option value="direction">Direction</option>
+                                    <!--<option value="enum">Enum</option>-->
+                                </select></li>
+                                <li>Default Value:<input
+                                    class="m3we-box dark_bordered" value="0"
+                                ></li>
+                                <li integer>Max Value:<input
+                                    class="m3we-box dark_bordered" value="0"
+                                ></li>
+                                <li integer>Min Value:<input
+                                    class="m3we-box dark_bordered" value="0"
+                                ></li>
+                            </ul>
+                            `;
+
+                            this.blockStates++;
+                            parent.insertBefore(newBlockState, parent.children[this.properties.length]);
                         },
                     },
                     //tl("translation.path") translates text
                     template: `
                         <ul class="list mobile_scrollbar"
                             @contextmenu.stop.prevent="openMenu($event)">
-                            <li v-for="(property,index) of properties" :proptype=property[2]>
+                            <li v-for="(property,index) of properties">
                                 <p v-if="property[1]!='checkbox'" style="display:flex;">
                                     {{propToReadable(property[0])}}:
-                                    <input :id="'property'+index" class="dark_bordered"
+                                    <input :id="'property'+index" class="m3we-box dark_bordered"
                                     :value="property[3]" :type="property[1]"
-                                    style="margin-left:5px; margin-right:5px; flex-grow: 1; flex-shrink: 1;"
-                                    @input="updateProp(_self.$el,index)">
+                                    style="margin-left:5px; margin-right:5px; flex-grow: 1; flex-shrink: 1;">
                                 </p>
                                 <p v-else style="display:flex;">
                                     {{propToReadable(property[0])}}:
                                     <input :id="'property'+index" 
                                     :checked="property[3]?true:null" :type="property[1]"
-                                    style="margin-left:5px; margin-right:5px;"
-                                    @input="updateProp(_self.$el,index)">
+                                    style="margin-left:5px; margin-right:5px;">
                                     <span v-if="property[2]=='boolOrScript'">{{property[3]?"ALWAYS":"NEVER"}}</span>
                                 </p>
+                            </li>
+                            <br>
+                            <li>
+                            <button @click="addBlockState(_self.$el)">Add Blockstate</button>
                             </li>
                         </ul>
                     `
@@ -132,16 +138,40 @@
                 icon: 'settings_input_component',
                 click: function() {
                     let objToReturn={};
-                    propsPanel.vue.properties.forEach((propData)=>{
-                        objToReturn[propData[0]]=propData[3];
+                    propsPanel.vue.properties.forEach((propData, index)=>{
+                        let currInput = document.getElementById("property"+index);
+                        objToReturn[propData[0]]=currInput.value;
+                        if(propData[1]=="checkbox") objToReturn[propData[0]]=currInput.checked;
                     });
-                    objToReturn["createdBy"]="m3we_plugin";
+
+                    let currBlockState=0;
+                    let currBSElement;
+                    while(currBSElement=document.getElementById("blockState"+currBlockState)){
+                        if(currBlockState==0)
+                            objToReturn.blockStates={};
+
+                        //objToReturn.blockstates[currBSElement.children]
+
+                        currBlockState++;
+                    }
+
+                    /*"blockStates": {
+                        "interval":{
+                            "type": "int",
+                            "min": 1,
+                            "max": 16,
+                            "default": 4
+                        }
+                    },*/
+
+
+                    objToReturn.createdBy="m3we_plugin";
 
                     //todo: add block collision
 
                     let a = document.createElement("a");
                     a.href = window.URL.createObjectURL(
-                        new Blob(JSON.stringify(objToReturn,null,2), {type: "text/plain"}));
+                        new Blob([JSON.stringify(objToReturn,null,2)], {type: "text/plain"}));
                     a.download = objToReturn.blockName+".json";
                     a.click();
                 }
