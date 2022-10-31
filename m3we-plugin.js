@@ -10,11 +10,15 @@
         version: "0.0.0",
         variant: "both",
         onload() {
-            document.head.innerHTML+="<style>"+
-            ".m3we-box{"+
-            "background-color: var(--color-dark);"+
-            "border: 1px solid var(--color-button);"+
-            "</style>";
+            document.head.innerHTML+=`<style>
+            .m3we-box{
+                background-color: var(--color-dark);
+                border: 1px solid var(--color-button);
+            }
+            ul[isInt="false"] li[integer]{
+                display:none;
+            }
+            </style>`;
 
             propsPanel=new Panel("properties",{
                 icon:"build_circle",
@@ -82,7 +86,8 @@
                                 value="blockstate"
                                 style="margin-right:5px;">
                             <ul style="margin-left:12px;">
-                                <li>Type:<select name="defaultvalue" class="m3we-box dark_bordered">
+                                <li>Type:<select name="defaultvalue" class="m3we-box dark_bordered" onchange="`+
+                                    `this.parentNode.parentNode.setAttribute('isInt',this.value=='int')">
                                     <option value="int">Integer</option>
                                     <option value="bool">Boolean</option>
                                     <option value="direction">Direction</option>
