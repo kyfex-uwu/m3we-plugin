@@ -1,3 +1,6 @@
+// https://cdn.jsdelivr.net/gh/kyfex-uwu/m3we-plugin@main/m3we-plugin.js
+//plugin link
+
 (function() {
     var button;
     var propsPanel;
