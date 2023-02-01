@@ -4,6 +4,23 @@
 (function() {
     var button;
     var propsPanel;
+
+    const itemModel = (namespace, name)=>{
+        return `{\n  \"parent\": \"${namespace}:block/${name}\"\n}`;
+    };
+    const itemGen = (namespace, name)=>{
+        return "{\n"+
+        "  \"namespace\": \""+namespace+"\",\n"+
+        "  \"itemName\":\""+name+"\",\n"+
+        "  \"blockToPlace\":\""+namespace+":"+name+"\"\n"+
+        "}";
+    }
+    const readme=(namespace,block)=>{
+        return "- Put the "+namespace+" folder in (minecraft folder)/config/m3we/resources so your block has visuals in game. (You can rename this folder, if you want)\n"+
+            "- Put "+block+"_block.json file in (minecraft folder)/config/m3we/blocks so your block behaves correctly in game. (You can rename this file, too!)\n"+
+            "- Put "+block+"_item.json file in (minecraft folder)/config/m3we/items so your block has an item attached to it. (If you rename this, the game will crash - just kidding, you can rename it too)\n"+
+            "\nIf you have any questions email me at fox@kyfexuwu.com";
+    };
     
     Plugin.register("m3we-plugin", {
         title: "M3WE Plugin",
@@ -144,7 +161,12 @@
                 name: 'Export M3WE Block',
                 description: 'Export an M3WE block',
                 icon: 'settings_input_component',
-                click: function() {
+                click: async function() {
+                    if(!Group.all.find(group=>group.name=="collision")){
+                        alert("Add a \"collision\" folder to your blockbench project, and add the block's collision inside of it first!");
+                        return;
+                    }
+
                     let objToReturn={};
                     propsPanel.vue.properties.forEach((propData, index)=>{
                         let currInput = document.getElementById("property"+index);
@@ -174,13 +196,53 @@
 
                     objToReturn.createdBy="m3we_plugin";
 
-                    //todo: add block collision
+                    objToReturn.blockShape=[];
+                    Group.all.find(group=>group.name=="collision").children.forEach((cube)=>{
+                        objToReturn.blockShape.push([...cube.from,...cube.to]);
+                    });
 
-                    let a = document.createElement("a");
-                    a.href = window.URL.createObjectURL(
-                        new Blob([JSON.stringify(objToReturn,null,2)], {type: "text/plain"}));
-                    a.download = objToReturn.blockName+".json";
-                    a.click();
+                    //--
+
+                    let resourcePack = new JSZip();
+
+                    let mainFolder = resourcePack.folder("assets").folder(objToReturn.namespace);
+                    mainFolder.file("README.txt",readme(objToReturn.namespace,objToReturn.blockName));
+                    mainFolder.file(objToReturn.blockName+"_block.json",JSON.stringify(objToReturn,null,2));
+                    mainFolder.file(objToReturn.blockName+"_item.json",itemGen(objToReturn.namespace,objToReturn.blockName));
+
+                    function protectChildren(folder){
+                        folder.children.forEach((child)=>{
+                            if(child.children){
+                                protectChildren(child);
+                            }else{
+                                child.export=false;
+                            }
+                        });
+                    }
+                    Group.all.filter((group)=>group.name=="collision").forEach((group)=>{
+                        protectChildren(group);
+                    });
+                    let model = JSON.parse(Codecs.java_block.compile());
+                    model.credit+=" and Kyfex's M3WE Plugin";
+                    Object.keys(model.textures).forEach((key)=>{
+                        model.textures[key]=objToReturn.namespace+":"+model.textures[key]
+                    });
+                    mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/block/`+objToReturn.blockName+".json", JSON.stringify(model,null,2));
+                    mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/item/`+objToReturn.blockName+".json",
+                        itemModel(objToReturn.namespace,objToReturn.blockName));
+
+                    mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/blockstates/`+objToReturn.blockName+".json","todo");
+
+                    Texture.all.forEach((texture)=>{
+                        mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/textures/block/`+texture.name+".png",
+                            texture.source.slice("data:image/png;base64,".length),{base64:true});
+                    });
+                    
+                    mainFolder.generateAsync({type:"blob"})
+                        .then(function (blob) {
+                            saveAs(blob, objToReturn.namespace+"_"+objToReturn.blockName+".zip");
+                        });
+
                 }
             });
             MenuBar.addAction(button, 'file.export.0');
@@ -211,21 +273,3 @@
         }
   });
 })();
-
-
-new Panel('outliner', {
-        growable: true,
-        component: {
-            name: 'panel-outliner',
-            template: `
-                <ul id="cubes_list"
-                    class="list mobile_scrollbar"
-                    @contextmenu.stop.prevent="openMenu($event)"
-                    @mousedown="dragNode($event)"
-                    @touchstart="dragNode($event)"
-                >
-                    <vue-tree-item v-for="item in root" :node="item" :options="options" :key="item.uuid"></vue-tree-item>
-                </ul>
-            `
-        },
-    })
