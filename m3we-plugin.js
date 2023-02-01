@@ -9,19 +9,11 @@
         return `{\n  \"parent\": \"${namespace}:block/${name}\"\n}`;
     };
     const itemGen = (namespace, name)=>{
-<<<<<<< Updated upstream
-        return "{\n"+
-        "  \"namespace\": \""+namespace+"\",\n"+
-        "  \"itemName\":\""+name+"\",\n"+
-        "  \"blockToPlace\":\""+namespace+":"+name+"\"\n"+
-        "}";
-=======
         return JSON.toString({
             namespace:namespace,
             itemName:name,
             blockToPlace:namespace+":"+name
         },null,2);
->>>>>>> Stashed changes
     }
     const readme=(namespace,block)=>{
         return "- Put the "+namespace+" folder in (minecraft folder)/config/m3we/resources so your block has visuals in game. (You can rename this folder, if you want)\n"+
@@ -29,8 +21,6 @@
             "- Put "+block+"_item.json file in (minecraft folder)/config/m3we/items so your block has an item attached to it. (If you rename this, the game will crash - just kidding, you can rename it too)\n"+
             "\nIf you have any questions email me at fox@kyfexuwu.com";
     };
-<<<<<<< Updated upstream
-=======
     const blockstateGen=(namespace,block)=>{
         return JSON.toString({
           "variants": {
@@ -40,7 +30,6 @@
           }
         },null,2);
     }
->>>>>>> Stashed changes
     
     Plugin.register("m3we-plugin", {
         title: "M3WE Plugin",
@@ -181,11 +170,7 @@
                 name: 'Export M3WE Block',
                 description: 'Export an M3WE block',
                 icon: 'settings_input_component',
-<<<<<<< Updated upstream
-                click: async function() {
-=======
                 click: function() {
->>>>>>> Stashed changes
                     if(!Group.all.find(group=>group.name=="collision")){
                         alert("Add a \"collision\" folder to your blockbench project, and add the block's collision inside of it first!");
                         return;
@@ -251,21 +236,13 @@
                     Object.keys(model.textures).forEach((key)=>{
                         model.textures[key]=objToReturn.namespace+":"+model.textures[key]
                     });
-<<<<<<< Updated upstream
-=======
                     model.parent="block/block";
->>>>>>> Stashed changes
                     mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/block/`+objToReturn.blockName+".json", JSON.stringify(model,null,2));
                     mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/item/`+objToReturn.blockName+".json",
                         itemModel(objToReturn.namespace,objToReturn.blockName));
 
-<<<<<<< Updated upstream
-                    mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/blockstates/`+objToReturn.blockName+".json","todo");
-=======
-                    
                     mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/blockstates/`+objToReturn.blockName+".json",
                         blockstateGen(objToReturn.namespace,objToReturn.blockName));
->>>>>>> Stashed changes
 
                     Texture.all.forEach((texture)=>{
                         mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/textures/block/`+texture.name+".png",
@@ -306,8 +283,4 @@
             //uninstall
         }
   });
-<<<<<<< Updated upstream
 })();
-=======
-})();
->>>>>>> Stashed changes
