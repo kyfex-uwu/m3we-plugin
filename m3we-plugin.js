@@ -4,10 +4,40 @@
 (function() {
     var button;
     var propsPanel;
+    var plugNPlayPanel;
+    var scriptPanel;
 
-    const materials=["AIR", "STRUCTURE_VOID", "PORTAL", "CARPET", "PLANT", "UNDERWATER_PLANT", "REPLACEABLE_PLANT", "NETHER_SHOOTS", "REPLACEABLE_UNDERWATER_PLANT", "WATER", "BUBBLE_COLUMN", "LAVA", "SNOW_LAYER", "FIRE", "DECORATION", "COBWEB", "SCULK", "REDSTONE_LAMP", "ORGANIC_PRODUCT", "SOIL", "SOLID_ORGANIC", "DENSE_ICE", "AGGREGATE", "SPONGE", "SHULKER_BOX", "WOOD", "NETHER_WOOD", "BAMBOO_SAPLING", "BAMBOO", "WOOL", "TNT", "LEAVES", "GLASS", "ICE", "CACTUS", "STONE", "METAL", "SNOW_BLOCK", "REPAIR_STATION", "BARRIER", "PISTON", "MOSS_BLOCK", "GOURD", "EGG", "CAKE", "AMETHYST", "POWDER_SNOW", "FROGSPAWN", "FROGLIGHT"];
-    const sounds=["WOOD", "GRAVEL", "GRASS", "LILY_PAD", "STONE", "METAL", "GLASS", "WOOL", "SAND", "SNOW", "POWDER_SNOW", "LADDER", "ANVIL", "SLIME", "HONEY", "WET_GRASS", "CORAL", "BAMBOO", "BAMBOO_SAPLING", "SCAFFOLDING", "SWEET_BERRY_BUSH", "CROP", "STEM", "VINE", "NETHER_WART", "LANTERN", "NETHER_STEM", "NYLIUM", "FUNGUS", "ROOTS", "SHROOMLIGHT", "WEEPING_VINES", "WEEPING_VINES_LOW_PITCH", "SOUL_SAND", "SOUL_SOIL", "BASALT", "WART_BLOCK", "NETHERRACK", "NETHER_BRICKS", "NETHER_SPROUTS", "NETHER_ORE", "BONE", "NETHERITE", "ANCIENT_DEBRIS", "LODESTONE", "CHAIN", "NETHER_GOLD_ORE", "GILDED_BLACKSTONE", "CANDLE", "AMETHYST_BLOCK", "AMETHYST_CLUSTER", "SMALL_AMETHYST_BUD", "MEDIUM_AMETHYST_BUD", "LARGE_AMETHYST_BUD", "TUFF", "CALCITE", "DRIPSTONE_BLOCK", "POINTED_DRIPSTONE", "COPPER", "CAVE_VINES", "SPORE_BLOSSOM", "AZALEA", "FLOWERING_AZALEA", "MOSS_CARPET", "MOSS_BLOCK", "BIG_DRIPLEAF", "SMALL_DRIPLEAF", "ROOTED_DIRT", "HANGING_ROOTS", "AZALEA_LEAVES", "SCULK_SENSOR", "SCULK_CATALYST", "SCULK", "SCULK_VEIN", "SCULK_SHRIEKER", "GLOW_LICHEN", "DEEPSLATE", "DEEPSLATE_BRICKS", "DEEPSLATE_TILES", "POLISHED_DEEPSLATE", "FROGLIGHT", "FROGSPAWN", "MANGROVE_ROOTS", "MUDDY_MANGROVE_ROOTS", "MUD", "MUD_BRICKS", "PACKED_MUD"];
-    const colors=["CLEAR", "PALE_GREEN", "PALE_YELLOW", "WHITE_GRAY", "BRIGHT_RED", "PALE_PURPLE", "IRON_GRAY", "DARK_GREEN", "WHITE", "LIGHT_BLUE_GRAY", "DIRT_BROWN", "STONE_GRAY", "WATER_BLUE", "OAK_TAN", "OFF_WHITE", "ORANGE", "MAGENTA", "LIGHT_BLUE", "YELLOW", "LIME", "PINK", "GRAY", "LIGHT_GRAY", "CYAN", "PURPLE", "BLUE", "BROWN", "GREEN", "RED", "BLACK", "GOLD", "DIAMOND_BLUE", "LAPIS_BLUE", "EMERALD_GREEN", "SPRUCE_BROWN", "DARK_RED", "TERRACOTTA_WHITE", "TERRACOTTA_ORANGE", "TERRACOTTA_MAGENTA", "TERRACOTTA_LIGHT_BLUE", "TERRACOTTA_YELLOW", "TERRACOTTA_LIME", "TERRACOTTA_PINK", "TERRACOTTA_GRAY", "TERRACOTTA_LIGHT_GRAY", "TERRACOTTA_CYAN", "TERRACOTTA_PURPLE", "TERRACOTTA_BLUE", "TERRACOTTA_BROWN", "TERRACOTTA_GREEN", "TERRACOTTA_RED", "TERRACOTTA_BLACK", "DULL_RED", "DULL_PINK", "DARK_CRIMSON", "TEAL", "DARK_AQUA", "DARK_DULL_PINK", "BRIGHT_TEAL", "DEEPSLATE_GRAY", "RAW_IRON_PINK", "LICHEN_GREEN"];
+    const materials=["AIR"].concat(["STRUCTURE_VOID", "PORTAL", "CARPET", "PLANT", "UNDERWATER_PLANT",
+        "REPLACEABLE_PLANT", "NETHER_SHOOTS", "REPLACEABLE_UNDERWATER_PLANT", "WATER", "BUBBLE_COLUMN",
+        "LAVA", "SNOW_LAYER", "FIRE", "DECORATION", "COBWEB", "SCULK", "REDSTONE_LAMP", "ORGANIC_PRODUCT",
+        "SOIL", "SOLID_ORGANIC", "DENSE_ICE", "AGGREGATE", "SPONGE", "SHULKER_BOX", "WOOD", "NETHER_WOOD",
+        "BAMBOO_SAPLING", "BAMBOO", "WOOL", "TNT", "LEAVES", "GLASS", "ICE", "CACTUS", "STONE", "METAL",
+        "SNOW_BLOCK", "REPAIR_STATION", "BARRIER", "PISTON", "MOSS_BLOCK", "GOURD", "EGG", "CAKE",
+        "AMETHYST", "POWDER_SNOW", "FROGSPAWN", "FROGLIGHT"].sort());
+    const sounds=["WOOD", "GRAVEL", "GRASS", "LILY_PAD", "STONE", "METAL", "GLASS", "WOOL", "SAND",
+        "SNOW", "POWDER_SNOW", "LADDER", "ANVIL", "SLIME", "HONEY", "WET_GRASS", "CORAL", "BAMBOO",
+        "BAMBOO_SAPLING", "SCAFFOLDING", "SWEET_BERRY_BUSH", "CROP", "STEM", "VINE", "NETHER_WART",
+        "LANTERN", "NETHER_STEM", "NYLIUM", "FUNGUS", "ROOTS", "SHROOMLIGHT", "WEEPING_VINES",
+        "WEEPING_VINES_LOW_PITCH", "SOUL_SAND", "SOUL_SOIL", "BASALT", "WART_BLOCK", "NETHERRACK",
+        "NETHER_BRICKS", "NETHER_SPROUTS", "NETHER_ORE", "BONE", "NETHERITE", "ANCIENT_DEBRIS",
+        "LODESTONE", "CHAIN", "NETHER_GOLD_ORE", "GILDED_BLACKSTONE", "CANDLE", "AMETHYST_BLOCK",
+        "AMETHYST_CLUSTER", "SMALL_AMETHYST_BUD", "MEDIUM_AMETHYST_BUD", "LARGE_AMETHYST_BUD", "TUFF",
+        "CALCITE", "DRIPSTONE_BLOCK", "POINTED_DRIPSTONE", "COPPER", "CAVE_VINES", "SPORE_BLOSSOM",
+        "AZALEA", "FLOWERING_AZALEA", "MOSS_CARPET", "MOSS_BLOCK", "BIG_DRIPLEAF", "SMALL_DRIPLEAF",
+        "ROOTED_DIRT", "HANGING_ROOTS", "AZALEA_LEAVES", "SCULK_SENSOR", "SCULK_CATALYST", "SCULK",
+        "SCULK_VEIN", "SCULK_SHRIEKER", "GLOW_LICHEN", "DEEPSLATE", "DEEPSLATE_BRICKS", "DEEPSLATE_TILES",
+        "POLISHED_DEEPSLATE", "FROGLIGHT", "FROGSPAWN", "MANGROVE_ROOTS", "MUDDY_MANGROVE_ROOTS", "MUD",
+        "MUD_BRICKS", "PACKED_MUD"].sort();
+    const colors=["CLEAR"].concat(["PALE_GREEN", "PALE_YELLOW", "WHITE_GRAY", "BRIGHT_RED", "PALE_PURPLE",
+        "IRON_GRAY", "DARK_GREEN", "WHITE", "LIGHT_BLUE_GRAY", "DIRT_BROWN", "STONE_GRAY", "WATER_BLUE",
+        "OAK_TAN", "OFF_WHITE", "ORANGE", "MAGENTA", "LIGHT_BLUE", "YELLOW", "LIME", "PINK", "GRAY",
+        "LIGHT_GRAY", "CYAN", "PURPLE", "BLUE", "BROWN", "GREEN", "RED", "BLACK", "GOLD", "DIAMOND_BLUE",
+        "LAPIS_BLUE", "EMERALD_GREEN", "SPRUCE_BROWN", "DARK_RED", "TERRACOTTA_WHITE", "TERRACOTTA_ORANGE",
+        "TERRACOTTA_MAGENTA", "TERRACOTTA_LIGHT_BLUE", "TERRACOTTA_YELLOW", "TERRACOTTA_LIME",
+        "TERRACOTTA_PINK", "TERRACOTTA_GRAY", "TERRACOTTA_LIGHT_GRAY", "TERRACOTTA_CYAN", "TERRACOTTA_PURPLE",
+        "TERRACOTTA_BLUE", "TERRACOTTA_BROWN", "TERRACOTTA_GREEN", "TERRACOTTA_RED", "TERRACOTTA_BLACK",
+        "DULL_RED", "DULL_PINK", "DARK_CRIMSON", "TEAL", "DARK_AQUA", "DARK_DULL_PINK", "BRIGHT_TEAL",
+        "DEEPSLATE_GRAY", "RAW_IRON_PINK", "LICHEN_GREEN"].sort());
 
     const itemModel = (namespace, name)=>{
         return `{\n  \"parent\": \"${namespace}:block/${name}\"\n}`;
@@ -25,6 +55,7 @@
             "- Put "+block+"_item.json file in (minecraft folder)/config/m3we/items so your block has an item attached to it. (If you rename this, the game will crash - just kidding, you can rename it too)\n"+
             "\nIf you have any questions email me at fox@kyfexuwu.com";
     };
+
     const blockstateGen=(namespace,block)=>{
         return JSON.stringify({
           "variants": {
@@ -43,6 +74,12 @@
         version: "0.0.0",
         variant: "both",
         onload() {
+            Language.addTranslations("en",{
+                "panel.properties": "Properties",
+                "panel.plugNPlay": "Plug 'N' Play",
+                "panel.script": "Script"
+            });
+
             document.head.innerHTML+=`<style>
             .m3we-box{
                 background-color: var(--color-dark);
@@ -54,7 +91,6 @@
             </style>`;
 
             propsPanel=new Panel("properties",{
-                icon:"build_circle",
                 condition: {modes: ["properties"]},
                 default_position: {
                     slot: 'left_bar',
@@ -69,17 +105,17 @@
                         properties:[
                             ["namespace","text","namespace","m3we"],
                             ["blockName","text","blockName","name"],
-                            ["material","enum","material","STONE",materials],//enum
+                            ["material","enum","material","STONE",materials],
                             ["hardness","number","float",0.0],
                             ["resistance","number","float",0.0],
                             ["slipperiness","number","float",0.6],
                             ["jumpMultiplier","number","float",1.0],
                             ["speedMultiplier","number","float",1.0],
-                            ["sounds","enum","sound","STONE",sounds],//enum
+                            ["sounds","enum","sound","STONE",sounds],
                             ["isOpaque","checkbox","bool",true],
                             ["luminance","number","integer", 0],//or script
-                            ["mapColor","enum","mapColor","CLEAR",colors],//enum
-                            ["drops","enum","dropTable","EMPTY",["coming soon"]],//enum
+                            ["mapColor","enum","mapColor","CLEAR",colors],
+                            ["drops","enum","dropTable","EMPTY",["coming soon"]],
                             ["isToolRequired","checkbox","bool",false],
                             ["ticksRandomly","checkbox","bool",false],
                             ["isAir","checkbox","bool",false],
@@ -181,6 +217,72 @@
                     `
                 },
             });
+            plugNPlayPanel=new Panel("plugNPlay",{
+                condition: {modes: ["properties"]},
+                default_position: {
+                    slot: 'right_bar',
+                    float_position: [0, 0],
+                    float_size: [300, 400],
+                    height: 400
+                },
+                growable:true,
+                component: {
+                    name: 'panel-display',
+                    data() {return {
+                        rotTypes:["None","4 Axes"],
+
+                        script:{
+                            getStateOnPlace:false,
+                        },
+                    }},
+                    methods: {
+                        updateScript(value,id){
+                            switch(id){
+                                case "rotType":
+                                    switch(value){
+                                        case "None":
+                                            console.log(script.getStateOnPlace);
+                                    }
+                                    break;
+                            }
+                        }
+                    },
+                    template: `<span class="list mobile_scrollbar">
+                        <ul class="list mobile_scrollbar"
+                            @contextmenu.stop.prevent="openMenu($event)">
+                            <li><p>
+                                Rotation type: <select>
+                                    <option v-for="enumValue of rotTypes"
+                                        @change="updateScript($event.target.value,'rotType')">
+                                        {{enumValue}}
+                                    </option>
+                                </select>
+                            </p></li>
+                        </ul>
+                        <div id="scriptpreview"></div>
+                        </span>
+                    `
+                },
+            });
+            scriptPanel=new Panel("script",{
+                condition: {modes: ["properties"]},
+                default_position: {
+                    slot: 'right_bar',
+                    float_position: [0, 0],
+                    float_size: [300, 400],
+                    height: 400
+                },
+                growable:true,
+                component: {
+                    name: 'panel-display',
+                    data() {return {
+                        script:"",
+                    }},
+                    methods: { },
+                    template: `<p class="m3we-box" style="margin: 12px;"></p>
+                    `
+                },
+            });
 
             button = new Action('m3we_export', {
                 name: 'Export M3WE Block',
@@ -219,13 +321,13 @@
                         currBlockState++;
                     }
 
-                    objToReturn.createdBy="m3we_plugin";
-
                     objToReturn.blockShape=[];
                     Group.all.find(group=>group.name=="collision").children.forEach((cube)=>{
                         objToReturn.blockShape.push([cube.from[0]/16,cube.from[1]/16,cube.from[2]/16,
                             cube.to[0]/16,cube.to[1]/16,cube.to[2]/16]);
                     });
+
+                    objToReturn.createdBy="m3we_plugin";
 
                     //--
 
@@ -245,13 +347,14 @@
                             }
                         });
                     }
+                    //this filtering is not enough, groups still exist
                     Group.all.filter((group)=>group.name=="collision").forEach((group)=>{
                         protectChildren(group);
                     });
                     let model = JSON.parse(Codecs.java_block.compile());
                     model.credit+=" and Kyfex's M3WE Plugin";
                     Object.keys(model.textures).forEach((key)=>{
-                        model.textures[key]=objToReturn.namespace+":"+model.textures[key]
+                        model.textures[key]=objToReturn.namespace+":block/"+model.textures[key]
                     });
                     model.parent="block/block";
                     mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/block/`+objToReturn.blockName+".json", JSON.stringify(model,null,2));
@@ -262,6 +365,7 @@
                         blockstateGen(objToReturn.namespace,objToReturn.blockName));
 
                     Texture.all.forEach((texture)=>{
+                        //todo: check if texture already has extension
                         mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/textures/block/`+texture.name+".png",
                             texture.source.slice("data:image/png;base64,".length),{base64:true});
                     });
@@ -280,7 +384,7 @@
                 name:"Properties",
                 category: "navigate",
                 default_tool: "move_tool",
-                center_windows: ["properties"],
+                center_windows: ["properties","plugNPlay"],
                 selectCubes: false,
                 component: {
                     data() {
@@ -297,7 +401,15 @@
             Modes.vue.$forceUpdate();
         },
         onunload() {
-            //uninstall
+            delete Panels.properties;
+            delete Panels.plugNPlay;
+            delete Panels.script;
+
+            delete Modes.options.properties;
+            Modes.vue.$forceUpdate();
+
+            button.delete();
+            console.log("m3we plugin uninstalled");
         }
   });
 })();
