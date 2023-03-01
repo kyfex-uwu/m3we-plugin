@@ -53,18 +53,70 @@
         return "- Put the "+namespace+" folder in (minecraft folder)/config/m3we/resources so your block has visuals in game. (You can rename this folder, if you want)\n"+
             "- Put "+block+"_block.json file in (minecraft folder)/config/m3we/blocks so your block behaves correctly in game. (You can rename this file, too!)\n"+
             "- Put "+block+"_item.json file in (minecraft folder)/config/m3we/items so your block has an item attached to it. (If you rename this, the game will crash - just kidding, you can rename it too)\n"+
+            "- Put "+block+"_script.lua file in (minecraft folder)/config/m3we/scripts so your block has a script attached to it. (ignore me if there is no script, and this one you can't rename)\n"+
             "\nIf you have any questions email me at fox@kyfexuwu.com";
     };
 
     const blockstateGen=(namespace,block)=>{
-        return JSON.stringify({
+        let toReturn={
           "variants": {
             "": {
               "model": namespace+":block/"+block
             }
           }
-        },null,2);
+        };
+
+        for(let runnable of Object.values(plugNPlayData.runnables.blockstateGen))
+            runnable(toReturn);
+
+        return JSON.stringify(toReturn,null,2);
     }
+
+    const plugNPlayData={
+        rotTypes:["None","4 Axes"],
+
+        blockData:{
+            blockShape: false,
+        },
+        blockStates:{},
+        script:{
+            outsideData:{},
+            getStateOnPlace: false,
+        },
+
+        runnables:{
+            blockstateGen:{},
+        },
+    };
+    const blockProps=[
+        //[name, htmlType, type, value, (enumValues)]
+        ["namespace",           "text",     "namespace",    "m3we"],
+        ["blockName",           "text",     "blockName",    "name"],
+        ["blockText",           "text",     "text",         "name",     "noSerialize"],
+        ["material",            "enum",     "enum",         "STONE",    materials],
+        ["hardness",            "text",     "float",        0.0],
+        ["resistance",          "text",     "float",        0.0],
+        ["slipperiness",        "text",     "float",        0.6],
+        ["jumpMultiplier",      "text",     "float",        1.0],
+        ["speedMultiplier",     "text",     "float",        1.0],
+        ["sounds",              "enum",     "enum",         "STONE",    sounds],
+        ["isOpaque",            "checkbox", "bool",         true],
+        ["luminance",           "text",     "int",          0],         //or script
+        ["mapColor",            "enum",     "enum",         "CLEAR",    colors],
+        ["drops",               "enum",     "enum",         "EMPTY",    ["coming soon"]],
+        ["isToolRequired",      "checkbox", "bool",         false],
+        ["ticksRandomly",       "checkbox", "bool",         false],
+        ["isAir",               "checkbox", "bool",         false],
+        ["isCollidable",        "checkbox", "bool",         true],
+        ["blockCollisionCanResize","checkbox","bool",       false],
+        ["isSolidWhen",         "checkbox", "boolOrScript", true],      //or script
+        ["allowsSpawningWhen",  "checkbox", "boolOrScript", true],      //or script
+        ["visionBlockedWhen",   "checkbox", "boolOrScript", false],     //or script
+        ["suffocatesWhen",      "checkbox", "boolOrScript", false],     //or script
+        ["emissiveLightingWhen","checkbox", "boolOrScript", false],     //or script
+        ["postProcessWhen",     "checkbox", "boolOrScript", false],     //or script
+    ];
+    window.blockProps=blockProps;
     
     Plugin.register("m3we-plugin", {
         title: "M3WE Plugin",
@@ -102,32 +154,7 @@
                 component: {
                     name: 'panel-display',
                     data() {return {
-                        properties:[
-                            ["namespace","text","namespace","m3we"],
-                            ["blockName","text","blockName","name"],
-                            ["material","enum","material","STONE",materials],
-                            ["hardness","number","float",0.0],
-                            ["resistance","number","float",0.0],
-                            ["slipperiness","number","float",0.6],
-                            ["jumpMultiplier","number","float",1.0],
-                            ["speedMultiplier","number","float",1.0],
-                            ["sounds","enum","sound","STONE",sounds],
-                            ["isOpaque","checkbox","bool",true],
-                            ["luminance","number","integer", 0],//or script
-                            ["mapColor","enum","mapColor","CLEAR",colors],
-                            ["drops","enum","dropTable","EMPTY",["coming soon"]],
-                            ["isToolRequired","checkbox","bool",false],
-                            ["ticksRandomly","checkbox","bool",false],
-                            ["isAir","checkbox","bool",false],
-                            ["isCollidable","checkbox","bool",true],
-                            ["blockCollisionCanResize","checkbox","bool",false],
-                            ["isSolidWhen","checkbox","boolOrScript", true],//or script
-                            ["allowsSpawningWhen","checkbox","boolOrScript", true],//or script
-                            ["visionBlockedWhen","checkbox","boolOrScript", false],//or script
-                            ["suffocatesWhen","checkbox","boolOrScript", false],//or script
-                            ["emissiveLightingWhen","checkbox","boolOrScript", false],//or script
-                            ["postProcessWhen","checkbox","boolOrScript", false],//or script
-                        ],
+                        properties:blockProps,
                         blockStates:0,
 
                         namespaceValidator:/[a-z0-9_.-]+/,
@@ -177,6 +204,38 @@
                             this.blockStates++;
                             parent.insertBefore(newBlockState, parent.children[this.properties.length]);
                         },
+                        updateProp(event,type){
+                            let val;
+
+                            switch(type){
+                                case "boolOrScript":
+                                    event.target.parentNode.children[1].innerText=event.target.checked?'ALWAYS':'NEVER';
+                                case "bool":
+                                    val=event.target.checked;
+                                    break;
+                                case "enum":
+                                case "text":
+                                case "namespace":
+                                case "blockName":
+                                    if(type=="namespace")
+                                        event.target.value=(event.target.value.match(this.namespaceValidator)||[""])[0];
+                                    if(type=="blockName")
+                                        event.target.value=(event.target.value.match(this.blockNameValidator)||[""])[0];
+
+                                    val=event.target.value;
+                                    break;
+                                case "float":
+                                    event.target.value=(event.target.value.match(/\d+\.?\d*/)||[0])[0];
+                                    val=parseFloat(event.target.value);
+                                    break;
+                                case "int":
+                                    event.target.value=(event.target.value.match(/\d+/)||[0])[0];
+                                    val=parseInt(event.target.value);
+                                    break;
+                            }
+
+                            this.properties[event.target.getAttribute("data-id")][3]=val;
+                        }
                     },
                     //tl("translation.path") translates text
                     template: `
@@ -186,25 +245,28 @@
                                 <p v-if="property[1]=='checkbox'" style="display:flex;">
                                     {{propToReadable(property[0])}}:
 
-                                    <input :id="'property'+index" 
+                                    <input :data-id="index" 
                                     :checked="property[3]?true:null" :type="property[1]"
-                                    @change="$event.target.parentNode.children[1].innerText=$event.target.checked?'ALWAYS':'NEVER'"
+                                    @input="updateProp($event,property[2])"
                                     style="margin-left:5px; margin-right:5px;">
                                     <span v-if="property[2]=='boolOrScript'">{{property[3]?"ALWAYS":"NEVER"}}</span>
                                 </p>
                                 <p v-else-if="property[1]=='enum'" style="display:flex;">
                                     {{propToReadable(property[0])}}:
 
-                                    <select :id="'property'+index">
+                                    <select :data-id="index"
+                                    @input="updateProp($event,property[2])">
                                         <option v-for="enumValue of property[4]">
                                             {{enumValue}}
                                         </option>
                                     </select>
                                 </p>
-                                <p v-else style="display:flex;">
+                                <p v-else-if="property[1]=='text'" style="display:flex;">
                                     {{propToReadable(property[0])}}:
 
-                                    <input :id="'property'+index" class="m3we-box dark_bordered"
+                                    <input :data-id="index"
+                                    @input="updateProp($event,property[2])"
+                                    class="m3we-box dark_bordered"
                                     :value="property[3]" :type="property[1]"
                                     style="margin-left:5px; margin-right:5px; flex-grow: 1; flex-shrink: 1;">
                                 </p>
@@ -228,20 +290,111 @@
                 growable:true,
                 component: {
                     name: 'panel-display',
-                    data() {return {
-                        rotTypes:["None","4 Axes"],
-
-                        script:{
-                            getStateOnPlace:false,
-                        },
-                    }},
+                    data() {return plugNPlayData},
                     methods: {
                         updateScript(value,id){
                             switch(id){
                                 case "rotType":
                                     switch(value){
                                         case "None":
-                                            console.log(script.getStateOnPlace);
+                                            delete this.blockData.blockShape;
+                                            delete this.blockStates.facing;
+
+                                            delete this.script.outsideData.blockShapes;
+                                            delete this.runnables.blockstateGen.fourAxes;
+                                            delete this.script.getStateOnPlace;
+                                            delete this.script.getBlockShape;
+                                            break;
+                                        case "4 Axes":
+                                            this.blockData.blockShape="script:getBlockShape";
+                                            this.blockStates.facing={
+                                                type: "enum",
+                                                values: ["north","south","east","west"]
+                                            }
+
+                                            this.script.outsideData.blockShapes=(objToReturn,model)=>{
+                                                let format=(shapes)=>{
+                                                    let toReturn="{";
+                                                    for(let cuboid of shapes){
+                                                        toReturn+="{";
+                                                        for(let i=0;i<5;i++)
+                                                            toReturn+=cuboid[i]+",";
+                                                        toReturn+=cuboid[5]+"},";
+                                                    }
+                                                    return toReturn.slice(0,-1)+"}";
+                                                };
+                                                let f180=(shapes)=>{
+                                                    let toReturn=[];
+                                                    for(let cuboid of shapes)
+                                                        toReturn.push([
+                                                            1-cuboid[3],cuboid[1],1-cuboid[5],
+                                                            1-cuboid[0],cuboid[4],1-cuboid[2]
+                                                        ]);
+                                                    return toReturn;
+                                                };
+                                                let f90=(shapes)=>{
+                                                    let toReturn=[];
+                                                    for(let cuboid of shapes)
+                                                        toReturn.push([
+                                                            cuboid[2],cuboid[1],1-cuboid[3],
+                                                            cuboid[5],cuboid[4],1-cuboid[0]
+                                                        ]);
+                                                    return toReturn;
+                                                };
+
+                                                //--
+
+                                                let blockShapes=objToReturn.blockShape;
+                                                objToReturn.blockShape=this.blockData.blockShape;
+
+                                                //--
+
+                                                let toAddModel={};
+
+                                                //--
+
+                                                return "local blockShapes = {\n"+
+                                                `   north=${format(blockShapes)},\n`+
+                                                `   south=${format(f180(blockShapes))},\n`+
+                                                `   east=${format(f90(f180(blockShapes)))},\n`+
+                                                `   west=${format(f90(blockShapes))}\n`+
+                                                "}"
+                                            };
+                                            this.runnables.blockstateGen.fourAxes=(blockstate)=>{
+                                                let model=blockstate.variants[""].model;
+
+                                                blockstate.variants["facing=north"]={
+                                                    model:model,
+                                                    y:0
+                                                };
+                                                blockstate.variants["facing=east"]={
+                                                    model:model,
+                                                    y:90
+                                                };
+                                                blockstate.variants["facing=south"]={
+                                                    model:model,
+                                                    y:180
+                                                };
+                                                blockstate.variants["facing=west"]={
+                                                    model:model,
+                                                    y:270
+                                                };
+
+                                                delete blockstate.variants[""];
+                                            };
+                                            this.script.getStateOnPlace=
+                                            "function getStateOnPlace(context)\n"+
+                                            "   return {\n"+
+                                            "       facing = context.getPlayerFacing().toString()\n"+
+                                            "   }\n"+
+                                            "end";
+                                            this.script.getBlockShape=
+                                            "function getBlockShape(state, world, pos, context)\n"+
+                                            "   return blockShapes[Properties.get(state,\"facing\")]\n"+
+                                            "end";
+
+                                            //todo: resources qwq
+                                            break;
                                     }
                                     break;
                             }
@@ -251,9 +404,8 @@
                         <ul class="list mobile_scrollbar"
                             @contextmenu.stop.prevent="openMenu($event)">
                             <li><p>
-                                Rotation type: <select>
-                                    <option v-for="enumValue of rotTypes"
-                                        @change="updateScript($event.target.value,'rotType')">
+                                Rotation type: <select @change="updateScript($event.target.value,'rotType')">
+                                    <option v-for="enumValue of rotTypes">
                                         {{enumValue}}
                                     </option>
                                 </select>
@@ -279,7 +431,7 @@
                         script:"",
                     }},
                     methods: { },
-                    template: `<p class="m3we-box" style="margin: 12px;"></p>
+                    template: `<p class="m3we-box" style="margin: 12px; padding: 12px;">coming soon</p>
                     `
                 },
             });
@@ -295,14 +447,13 @@
                     }
 
                     let objToReturn={};
-                    propsPanel.vue.properties.forEach((propData, index)=>{
-                        let currInput = document.getElementById("property"+index);
-                        objToReturn[propData[0]]=currInput.value;
-                        if(propData[1]=="checkbox") objToReturn[propData[0]]=currInput.checked;
-                    });
+                    for(let propName in blockProps)
+                        if(blockProps[propName][4]!="noSerialize")
+                            objToReturn[blockProps[propName][0]]=blockProps[propName][3];
 
                     let currBlockState=0;
                     let currBSElement;
+                    //todo: rewrite cleaner
                     while(currBSElement=document.getElementById("blockState"+currBlockState)){
                         if(currBlockState==0)
                             objToReturn.blockStates={};
@@ -327,17 +478,6 @@
                             cube.to[0]/16,cube.to[1]/16,cube.to[2]/16]);
                     });
 
-                    objToReturn.createdBy="m3we_plugin";
-
-                    //--
-
-                    let resourcePack = new JSZip();
-
-                    let mainFolder = resourcePack.folder("assets").folder(objToReturn.namespace);
-                    mainFolder.file("README.txt",readme(objToReturn.namespace,objToReturn.blockName));
-                    mainFolder.file(objToReturn.blockName+"_block.json",JSON.stringify(objToReturn,null,2));
-                    mainFolder.file(objToReturn.blockName+"_item.json",itemGen(objToReturn.namespace,objToReturn.blockName));
-
                     function protectChildren(folder){
                         folder.children.forEach((child)=>{
                             if(child.children){
@@ -351,18 +491,62 @@
                     Group.all.filter((group)=>group.name=="collision").forEach((group)=>{
                         protectChildren(group);
                     });
+
+                    //--
+
                     let model = JSON.parse(Codecs.java_block.compile());
+                    delete model.groups;
                     model.credit+=" and Kyfex's M3WE Plugin";
                     Object.keys(model.textures).forEach((key)=>{
-                        model.textures[key]=objToReturn.namespace+":block/"+model.textures[key]
+                        model.textures[key]=objToReturn.namespace+":"+model.textures[key]
                     });
                     model.parent="block/block";
+
+                    //--
+
+                    let script="-- made with the m3we plugin!\n\n";
+                    let isScript=false;
+                    for(let outsideDataFunc of Object.values(plugNPlayData.script.outsideData)){
+                        script+=outsideDataFunc(objToReturn)+"\n\n";
+                        isScript=true;
+                    }
+
+                    if(plugNPlayData.blockStates)
+                        objToReturn.blockStates=
+                            Object.assign(objToReturn.blockStates||{},plugNPlayData.blockStates);
+
+                    script+="-- owo --\n\n";
+
+                    for(let funcName of Object.keys(plugNPlayData.script)){
+                        if(funcName=="outsideData") continue;
+
+                        script+=plugNPlayData.script[funcName]+"\n\n";
+                        isScript=true;
+                    }
+
+                    //--
+
+                    objToReturn.createdBy="m3we_plugin";
+                    let resourcePack = new JSZip();
+
+                    let mainFolder = resourcePack.folder("assets").folder(objToReturn.namespace);
+
+                    if(isScript){
+                        mainFolder.file(objToReturn.blockName+"_script.lua",script);
+                        objToReturn.script=objToReturn.blockName+"_script";
+                    }
+                    mainFolder.file("README.txt",readme(objToReturn.namespace,objToReturn.blockName));//todo: remove script if no script
+                    mainFolder.file(objToReturn.blockName+"_block.json",JSON.stringify(objToReturn,null,2));
+                    mainFolder.file(objToReturn.blockName+"_item.json",itemGen(objToReturn.namespace,objToReturn.blockName));
+
                     mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/block/`+objToReturn.blockName+".json", JSON.stringify(model,null,2));
                     mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/item/`+objToReturn.blockName+".json",
                         itemModel(objToReturn.namespace,objToReturn.blockName));
 
                     mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/blockstates/`+objToReturn.blockName+".json",
                         blockstateGen(objToReturn.namespace,objToReturn.blockName));
+
+                    //todo: lang file
 
                     Texture.all.forEach((texture)=>{
                         //todo: check if texture already has extension
@@ -378,7 +562,6 @@
                 }
             });
             MenuBar.addAction(button, 'file.export.0');
-
             
             new Mode("properties",{
                 name:"Properties",
