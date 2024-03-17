@@ -6,6 +6,7 @@
     var propsPanel;
     var plugNPlayPanel;
     var scriptPanel;
+    var propMode;
 
     const materials=["AIR"].concat(["STRUCTURE_VOID", "PORTAL", "CARPET", "PLANT", "UNDERWATER_PLANT",
         "REPLACEABLE_PLANT", "NETHER_SHOOTS", "REPLACEABLE_UNDERWATER_PLANT", "WATER", "BUBBLE_COLUMN",
@@ -39,25 +40,27 @@
         "DULL_RED", "DULL_PINK", "DARK_CRIMSON", "TEAL", "DARK_AQUA", "DARK_DULL_PINK", "BRIGHT_TEAL",
         "DEEPSLATE_GRAY", "RAW_IRON_PINK", "LICHEN_GREEN"].sort());
 
-    const itemModel = (namespace, name)=>{
-        return `{\n  \"parent\": \"${namespace}:block/${name}\"\n}`;
+    function itemModel(namespace, name){
+        return JSON.stringify({
+            parent:namespace,
+            block:name
+        },null,2);
     };
-    const itemGen = (namespace, name)=>{
+    function itemGen(namespace, name){
         return JSON.stringify({
             namespace:namespace,
             itemName:name,
             blockToPlace:namespace+":"+name
         },null,2);
     }
-    const readme=(namespace,block)=>{
+    function readme(namespace,block){
         return "- Put the "+namespace+" folder in (minecraft folder)/config/m3we/resources so your block has visuals in game. (You can rename this folder, if you want)\n"+
             "- Put "+block+"_block.json file in (minecraft folder)/config/m3we/blocks so your block behaves correctly in game. (You can rename this file, too!)\n"+
             "- Put "+block+"_item.json file in (minecraft folder)/config/m3we/items so your block has an item attached to it. (If you rename this, the game will crash - just kidding, you can rename it too)\n"+
             "- Put "+block+"_script.lua file in (minecraft folder)/config/m3we/scripts so your block has a script attached to it. (ignore me if there is no script, and this one you can't rename)\n"+
-            "\nIf you have any questions email me at fox@kyfexuwu.com";
+            "\nIf you have any questions contact me on discord @kyfexuwu";
     };
-
-    const blockstateGen=(namespace,block)=>{
+    function blockstateGen(namespace,block){
         let toReturn={
           "variants": {
             "": {
@@ -88,12 +91,12 @@
             blockstateGen:{},
         },
     };
+
     const blockProps=[
-        //[name, htmlType, type, value, (enumValues)]
+        //[name, inputType, type, value, (enumValues)]
         ["namespace",           "text",     "namespace",    "m3we"],
         ["blockName",           "text",     "blockName",    "name"],
-        ["blockText",           "text",     "text",         "name",     "noSerialize"],
-        ["material",            "enum",     "enum",         "STONE",    materials],
+        ["blockText",           "text",     "text",         "Name",     "noSerialize"],
         ["hardness",            "text",     "float",        0.0],
         ["resistance",          "text",     "float",        0.0],
         ["slipperiness",        "text",     "float",        0.6],
@@ -103,7 +106,6 @@
         ["isOpaque",            "checkbox", "bool",         true],
         ["luminance",           "text",     "int",          0],         //or script
         ["mapColor",            "enum",     "enum",         "CLEAR",    colors],
-        ["drops",               "enum",     "enum",         "EMPTY",    ["coming soon"]],
         ["isToolRequired",      "checkbox", "bool",         false],
         ["ticksRandomly",       "checkbox", "bool",         false],
         ["isAir",               "checkbox", "bool",         false],
@@ -116,12 +118,11 @@
         ["emissiveLightingWhen","checkbox", "boolOrScript", false],     //or script
         ["postProcessWhen",     "checkbox", "boolOrScript", false],     //or script
     ];
-    window.blockProps=blockProps;
     
     Plugin.register("m3we-plugin", {
-        title: "M3WE Plugin",
+        title: "m3we Plugin",
         author: "KYFEX",
-        description: "Tool for making M3WE asset creation even easier",
+        description: "A tool for making m3we asset creation even easier",
         icon: "build_circle",
         version: "0.0.0",
         variant: "both",
@@ -142,8 +143,9 @@
             }
             </style>`;
 
+            let blockStates=[];
             propsPanel=new Panel("properties",{
-                condition: {modes: ["properties"]},
+                condition: { modes: ["properties"] },
                 default_position: {
                     slot: 'left_bar',
                     float_position: [0, 0],
@@ -155,7 +157,7 @@
                     name: 'panel-display',
                     data() {return {
                         properties:blockProps,
-                        blockStates:0,
+                        blockStates:blockStates,
 
                         namespaceValidator:/[a-z0-9_.-]+/,
                         blockNameValidator:/[a-z0-9/._-]+/,
@@ -172,37 +174,16 @@
                             }
                             return toReturn;
                         },
-                        addBlockState(parent){
-                            let blockStateId=this.blockStates;
-                            let newBlockState = document.createElement("li");
-                            newBlockState.id="blockState"+blockStateId;
-                            newBlockState.style="margin-left:12px;";
-                            newBlockState.innerHTML=`
-                                Blockstate <input class="m3we-box dark_bordered"
-                                value="blockstate"
-                                style="margin-right:5px;">
-                            <ul style="margin-left:12px;">
-                                <li>Type:<select name="defaultvalue" class="m3we-box dark_bordered" onchange="`+
-                                    `this.parentNode.parentNode.setAttribute('isInt',this.value=='int')">
-                                    <option value="int">Integer</option>
-                                    <option value="bool">Boolean</option>
-                                    <option value="direction">Direction</option>
-                                    <!--<option value="enum">Enum</option>-->
-                                </select></li>
-                                <li>Default Value:<input
-                                    class="m3we-box dark_bordered" value="0"
-                                ></li>
-                                <li integer>Max Value:<input
-                                    class="m3we-box dark_bordered" value="0"
-                                ></li>
-                                <li integer>Min Value:<input
-                                    class="m3we-box dark_bordered" value="0"
-                                ></li>
-                            </ul>
-                            `;
+                        addBlockState(){
+                            this.blockStates.push({
+                                name:"blockstate",
+                                type:"boolean",
+                                def: false,
 
-                            this.blockStates++;
-                            parent.insertBefore(newBlockState, parent.children[this.properties.length]);
+                                max:1,
+                                min:0,
+                                values:["one", "two"]
+                            });
                         },
                         updateProp(event,type){
                             let val;
@@ -235,7 +216,21 @@
                             }
 
                             this.properties[event.target.getAttribute("data-id")][3]=val;
-                        }
+                        },
+                        updateBlockState(event, state){
+                            state.type=event.target.value;
+                            switch(state.type){
+                                case "int":
+                                    state.def=0;
+                                    break;
+                                case "enum":
+                                    state.def=state.values[0];
+                                    break;
+                                case "bool":
+                                    state.def=false;
+                                    break;
+                            }
+                        },
                     },
                     //tl("translation.path") translates text
                     template: `
@@ -272,8 +267,81 @@
                                 </p>
                             </li>
                             <br>
+                            <li v-for="(state, index) of blockStates"><p>
+                                Blockstate <input 
+                                    class="m3we-box dark_bordered"
+                                    style="margin-right:5px;"
+                                    :value="state.name"
+                                    @input="state.name=$event.target.value">
+
+                                <ul style="margin-left:12px;">
+                                    <li>Type:<select 
+                                            class="m3we-box dark_bordered"
+                                            @input="updateBlockState($event, state)">
+                                        <option value="int" :selected="state.type=='int'">Integer</option>
+                                        <option value="boolean" :selected="state.type=='boolean'">Boolean</option>
+                                        <option value="enum" :selected="state.type=='enum'">Enum</option>
+                                    </select></li>
+                                    <li v-if="state.type=='int'">
+                                        Default Value:<input
+                                                class="m3we-box dark_bordered" 
+                                                :value="state.def"
+                                                @input="state.def=$event.target.value"
+
+                                                :type="state.type=='int'?'number':'text'"
+                                                step="1"
+                                                :min="state.type=='int'?state.min:false"
+                                                :max="state.type=='int'?state.max:false">
+                                    </li>
+                                    <li v-else-if="state.type=='enum'">
+                                        Default Value:<select 
+                                                class="m3we-box dark_bordered"
+                                                @input="state.def=$event.target.value">
+                                            <option v-for="(value) of state.values"
+                                                    :value="value">
+                                                {{value}}
+                                            </option>
+                                        </select>
+                                    </li>
+                                    <li v-else-if="state.type=='boolean'">
+                                        Default Value:<input
+                                                type="checkbox"
+                                                :checked="!!state.value"
+                                                @input="state.value=$event.target.checked">
+                                    </li>
+                                    <template v-if="state.type=='int'">
+                                        <li>
+                                            Max Value:<input
+                                                    class="m3we-box dark_bordered" 
+                                                    :value="state.max"
+                                                    step="1"
+                                                    @input="state.max=$event.target.value">
+                                        </li>
+                                        <li>
+                                            Min Value:<input
+                                                    class="m3we-box dark_bordered"
+                                                    :value="state.min"
+                                                    step="1"
+                                                    @input="state.min=$event.target.value">
+                                        </li>
+                                    </template>
+                                    <template v-if="state.type=='enum'">
+                                        <li v-for="(value, index) of state.values">
+                                            <input 
+                                                    class="m3we-box dark_bordered" 
+                                                    :value="value"
+                                                    @input="state.values[index]=$event.target.value">
+                                            <i 
+                                                    class="material-icons notranslate icon"
+                                                    @click="state.values.splice(index,1)">delete</i>
+                                        </li>
+                                        <li><button @click="state.values.push('value')">Add Value</button></li>
+                                    </template>
+                                    <li><button @click="blockStates.splice(index,1)">Remove Blockstate</button></li>
+                                </ul>
+                            </p></li>
                             <li>
-                            <button @click="addBlockState(_self.$el)">Add Blockstate</button>
+                                <button @click="addBlockState()">Add Blockstate</button>
                             </li>
                         </ul>
                     `
@@ -451,25 +519,22 @@
                         if(blockProps[propName][4]!="noSerialize")
                             objToReturn[blockProps[propName][0]]=blockProps[propName][3];
 
-                    let currBlockState=0;
-                    let currBSElement;
-                    //todo: rewrite cleaner
-                    while(currBSElement=document.getElementById("blockState"+currBlockState)){
-                        if(currBlockState==0)
-                            objToReturn.blockStates={};
+                    for(let state of blockStates){
+                        if(!objToReturn.blockStates) objToReturn.blockStates={};
 
-                        let BSData=currBSElement.children[1].children;
                         let currBlockStateObj={
-                            type:BSData[0].children[0].value,
-                            default:BSData[1].children[0].value
+                            type:state.type,
+                            default:state.def
                         };
-                        if(currBlockStateObj.type=="int"){
-                            currBlockStateObj.min=BSData[2].children[0].value;
-                            currBlockStateObj.max=BSData[3].children[0].value;
+                        if(state.type=="int"){
+                            currBlockStateObj.min=state.min;
+                            currBlockStateObj.max=state.max;
+                        }else if(state.type=="enum"){
+                            currBlockStateObj.values=[state.def].concat(state.values.filter(v=>v!=state.def));
+                            delete currBlockStateObj.default;
                         }
 
-                        objToReturn.blockStates[currBSElement.children[0].value]=currBlockStateObj;
-                        currBlockState++;
+                        objToReturn.blockStates[state.name]=currBlockStateObj;
                     }
 
                     objToReturn.blockShape=[];
@@ -487,7 +552,7 @@
                             }
                         });
                     }
-                    //this filtering is not enough, groups still exist
+                    //this filtering is not enough, subgroups still exist(?)
                     Group.all.filter((group)=>group.name=="collision").forEach((group)=>{
                         protectChildren(group);
                     });
@@ -497,10 +562,22 @@
                     let model = JSON.parse(Codecs.java_block.compile());
                     delete model.groups;
                     model.credit+=" and Kyfex's M3WE Plugin";
-                    Object.keys(model.textures).forEach((key)=>{
-                        model.textures[key]=objToReturn.namespace+":"+model.textures[key]
-                    });
+                    if(model.textures){
+                        Object.keys(model.textures).forEach((key)=>{
+                            model.textures[key]=objToReturn.namespace+":"+model.textures[key]
+                        });
+                    }
                     model.parent="block/block";
+                    function oneLinerArr(arr){
+                        return {makeIntoOneLine_m3we:arr};
+                    }
+                    for(let element of model.elements){
+                        element.from=oneLinerArr(element.from);
+                        element.to=oneLinerArr(element.to);
+                        for(let face of Object.values(element.faces)){
+                            face.uv=oneLinerArr(face.uv);
+                        }
+                    }
 
                     //--
 
@@ -539,7 +616,14 @@
                     mainFolder.file(objToReturn.blockName+"_block.json",JSON.stringify(objToReturn,null,2));
                     mainFolder.file(objToReturn.blockName+"_item.json",itemGen(objToReturn.namespace,objToReturn.blockName));
 
-                    mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/block/`+objToReturn.blockName+".json", JSON.stringify(model,null,2));
+                    let oneLineArrays=[];
+                    mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/block/`+objToReturn.blockName+".json", JSON.stringify(model,function(k,v){
+                           if(v.makeIntoOneLine_m3we)
+                                return "makeIntoOneLine_m3we"+(oneLineArrays.push(v.makeIntoOneLine_m3we)-1);
+                           return v;
+                        },2).replaceAll(/"makeIntoOneLine_m3we\d+"/g,match=>
+                            JSON.stringify(oneLineArrays[match.slice("'makeIntoOneLine_m3we".length,-1)])));
+
                     mainFolder.file(`${objToReturn.namespace}/assets/${objToReturn.namespace}/models/item/`+objToReturn.blockName+".json",
                         itemModel(objToReturn.namespace,objToReturn.blockName));
 
@@ -563,7 +647,7 @@
             });
             MenuBar.addAction(button, 'file.export.0');
             
-            new Mode("properties",{
+            propMode = new Mode("properties",{
                 name:"Properties",
                 category: "navigate",
                 default_tool: "move_tool",
@@ -582,17 +666,18 @@
                 onUnselect: ()=>{}
             });
             Modes.vue.$forceUpdate();
+            console.log("m3we plugin loaded");
         },
         onunload() {
-            delete Panels.properties;
-            delete Panels.plugNPlay;
-            delete Panels.script;
+            propsPanel.delete();
+            plugNPlayPanel.delete();
+            scriptPanel.delete();
+            propMode.delete();
+            button.delete();
 
-            delete Modes.options.properties;
             Modes.vue.$forceUpdate();
 
-            button.delete();
-            console.log("m3we plugin uninstalled");
+            console.log("m3we plugin unloaded");
         }
   });
 })();
